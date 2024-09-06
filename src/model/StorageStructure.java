@@ -57,4 +57,13 @@ public class StorageStructure {
     public void setStorableItemIntoRack(StorableItem s) {
         itemsList.add(s);
     }
+
+    @Override
+    public String toString() {
+        return "StorageStructure{" +
+                "id=" + id +
+                ", itemsList=" + itemsList +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

@@ -1,19 +1,22 @@
 package src.service;
 
+import src.repository.GeneralRepository;
+
 import java.io.BufferedReader;
-import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.System;
 import java.util.Objects;
-import java.util.Scanner;
 
 public class MenuCreator {
-    private BufferedReader reader;
+    private final BufferedReader reader;
     private String userName;
     private int opcion;
+    private GeneralRepository repository;
+    private StorableItemService itemService;
+    private StorageStructureService storageStructureService;
 
     public void getMenu() throws IOException {
+
         System.out.println("**********************");
         System.out.println("**********************");
         System.out.println("****Inventory Sys*****");
@@ -27,7 +30,7 @@ public class MenuCreator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        System.out.println(repository.getWarehouse());
         System.out.println("Ingrese una opción a ejecutar");
         do {
             System.out.println();
@@ -47,15 +50,19 @@ public class MenuCreator {
 
             switch (opcion) {
                 case 1:
-                    System.out.println("Ingresar producto");
+                    addItemToLobbyProcess();
                     break;
                 case 2:
-                    System.out.println("Eliminar/Modificar producto");
+                    System.out.println("Asignar producto a estanteria");
+
                     break;
                 case 3:
-                    System.out.println("Buscar producto");
+                    System.out.println("Eliminar/Modificar producto");
                     break;
                 case 4:
+                    System.out.println("Buscar producto");
+                    break;
+                case 5:
                     System.out.println("Ingresar reserva cliente");
                     break;
                 default:
@@ -72,9 +79,25 @@ public class MenuCreator {
         System.exit(0);
     }
 
+    private void addItemToLobbyProcess() throws IOException {
+        System.out.println("Ingresar lote de producto a lobby");
+        System.out.println("Ingrese nombre del producto");
+        String name = reader.readLine();
+        System.out.println("Ingrese descripcion del producto");
+        String description = reader.readLine();
+        System.out.println("Ingrese codigo de identificacion del producto");
+        Long code = Long.valueOf(reader.readLine());
+        System.out.println("Ingrese stock del producto");
+        int stock = Integer.parseInt(reader.readLine());
+        itemService.createItem(code, stock, name, description);
+        System.out.println(repository.getItemsListLobby());
+    }
+
     public MenuCreator() {
         this.reader = new BufferedReader(new InputStreamReader(System.in));
         this.opcion = 0;
+        repository = GeneralRepository.getInstance();
+        this.itemService = new StorableItemService(repository);
     }
 
     @Override

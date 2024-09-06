@@ -55,4 +55,12 @@ public class Section {
         }
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "Section{" +
+                "rackList=" + rackList +
+                ", id=" + id +
+                '}';
+    }
 }
