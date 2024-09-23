@@ -114,7 +114,7 @@ public class MenuCreator {
             System.out.println("No se pudo descontar el item - Error");
             return;
         }
-        var itemToStorageStructure = item.get();
+        var itemToStorageStructure = new StorableItem(item.get());
         itemToStorageStructure.setStock(stockGuardado);
         List<Section> sectionList = repository.getWarehouse().getSectionList();
         storageStructureService.addStorableItemToRack(item.get(), idRack, sectionList.stream()

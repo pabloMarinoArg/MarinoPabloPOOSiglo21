@@ -19,6 +19,14 @@ public class StorableItem {
         this.status = status;
     }
 
+    public StorableItem (StorableItem itemClone) {
+        this.code = itemClone.code;
+        this.name = itemClone.name;
+        this.rackId = itemClone.rackId;
+        this.description = itemClone.description;
+        this.status = itemClone.status;
+    }
+
     public StorableItem(Long code, String name, String description, int stock, String status) {
         this.code = code;
         this.name = name;
