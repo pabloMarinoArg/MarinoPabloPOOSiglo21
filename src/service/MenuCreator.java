@@ -1,11 +1,16 @@
 package src.service;
 
+import src.model.Section;
+import src.model.StorableItem;
+import src.model.StorageStructure;
 import src.repository.GeneralRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MenuCreator {
     private final BufferedReader reader;
@@ -30,7 +35,6 @@ public class MenuCreator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println(repository.getWarehouse());
         System.out.println("Ingrese una opción a ejecutar");
         do {
             System.out.println();
@@ -53,8 +57,7 @@ public class MenuCreator {
                     addItemToLobbyProcess();
                     break;
                 case 2:
-                    System.out.println("Asignar producto a estanteria");
-
+                    addOrSubstractItem();
                     break;
                 case 3:
                     System.out.println("Eliminar/Modificar producto");
@@ -79,8 +82,49 @@ public class MenuCreator {
         System.exit(0);
     }
 
+    private void addOrSubstractItem() throws IOException {
+        System.out.println("Asignar producto a estanteria");
+        storageStructureService.getAll();
+        repository.getItemsListLobby().forEach(storableItem -> {
+            System.out.println(storableItem.getStringItemD());
+        });
+
+        System.out.println("Ingrese el codigo del item a guardar: ");
+        var getCodeFromUser = Integer.parseInt(reader.readLine());
+        var item = itemService.getItemByCode(getCodeFromUser);
+        if (item.isEmpty()) {
+            System.out.printf("No existe el item con codigo: %d", getCodeFromUser);
+            return;
+        }
+
+        System.out.println("Ingrese el id de la estanteria donde lo guardara: ");
+        var idRack = Long.parseLong(reader.readLine());
+        var rack = storageStructureService.findStorageStructureById(idRack);
+        if (rack.isEmpty()) {
+            System.out.printf("No existe la estanteria con id: %d", idRack);
+            return;
+        }
+        System.out.println("Que cantidad del stock disponible va guardar en la estanteria?");
+        var stockGuardado = Integer.parseInt(reader.readLine());
+        if (item.get().getStock() < stockGuardado) {
+            System.out.printf("Revisar la cantidad a guardar, es mayor a la disponible");
+            return;
+        }
+        if (!itemService.quitarStock(stockGuardado, getCodeFromUser)) {
+            System.out.println("No se pudo descontar el item - Error");
+            return;
+        }
+        var itemToStorageStructure = item.get();
+        itemToStorageStructure.setStock(stockGuardado);
+        List<Section> sectionList = repository.getWarehouse().getSectionList();
+        storageStructureService.addStorableItemToRack(item.get(), idRack, sectionList.stream()
+                .flatMap(section -> section.getRackList().stream())
+                .collect(Collectors.toList()));
+    }
+
     private void addItemToLobbyProcess() throws IOException {
         System.out.println("Ingresar lote de producto a lobby");
+        System.out.println("Recepcion de productos nuevos a la espera de llevarlos a una estanteria");
         System.out.println("Ingrese nombre del producto");
         String name = reader.readLine();
         System.out.println("Ingrese descripcion del producto");
@@ -89,8 +133,9 @@ public class MenuCreator {
         Long code = Long.valueOf(reader.readLine());
         System.out.println("Ingrese stock del producto");
         int stock = Integer.parseInt(reader.readLine());
-        itemService.createItem(code, stock, name, description);
-        System.out.println(repository.getItemsListLobby());
+        itemService.createItem(code, stock, name, description, "Nuevo No Asignado");
+        List<StorableItem> itemsListLobby = repository.getItemsListLobby();
+        itemsListLobby.forEach(storableItem -> System.out.println(storableItem.getStringItemD()));
     }
 
     public MenuCreator() {
@@ -98,6 +143,7 @@ public class MenuCreator {
         this.opcion = 0;
         repository = GeneralRepository.getInstance();
         this.itemService = new StorableItemService(repository);
+        this.storageStructureService = new StorageStructureService(repository);
     }
 
     @Override

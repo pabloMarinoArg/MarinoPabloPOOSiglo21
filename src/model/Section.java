@@ -56,11 +56,22 @@ public class Section {
         return null;
     }
 
-    @Override
-    public String toString() {
-        return "Section{" +
-                "rackList=" + rackList +
-                ", id=" + id +
-                '}';
+    public String getSectionString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Seccion id: ").append(this.id).append("\n")
+                .append("********************").append("\n");
+        rackList.forEach(rack -> sb.append(rack.toString()).append("\n"));
+        return sb.toString();
     }
+
+   /* @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Section with id: ").append(this.id).append("\n")
+                .append("***********************************").append("\n");
+
+        rackList.forEach(rack -> sb.append(rack.toString()).append("\n"));
+
+        return sb.toString();
+    }*/
 }

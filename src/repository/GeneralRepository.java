@@ -16,13 +16,13 @@ public class GeneralRepository {
 
     public GeneralRepository() {
 
-        StorageStructure rack1 = new StorageStructure(1L, new ArrayList<>(), "Cosas generales 1");
-        StorageStructure rack2 = new StorageStructure(2L, new ArrayList<>(), "Cosas generales 2");
-        StorageStructure rack3 = new StorageStructure(3L, new ArrayList<>(), "Cosas generales 3");
-        StorageStructure rack4 = new StorageStructure(4L, new ArrayList<>(), "Cosas generales 4");
-        Section section1 = new Section(List.of(rack1,rack2), 22233L);
-        Section section2 = new Section(List.of(rack3), 22433L);
-        Section section3 = new Section(List.of(rack4), 22533L);
+        StorageStructure rack1 = new StorageStructure(1L, new ArrayList<>(), "Cables");
+        StorageStructure rack2 = new StorageStructure(2L, new ArrayList<>(), "Electronico");
+        StorageStructure rack3 = new StorageStructure(3L, new ArrayList<>(), "Plasticos");
+        StorageStructure rack4 = new StorageStructure(4L, new ArrayList<>(), "Vidrio");
+        Section section1 = new Section(List.of(rack1,rack2), 113L);
+        Section section2 = new Section(List.of(rack3), 234L);
+        Section section3 = new Section(List.of(rack4), 453L);
         List<Section> sectionList = new ArrayList<>();
         sectionList.add(section1);
         sectionList.add(section2);
@@ -49,5 +49,8 @@ public class GeneralRepository {
 
     public void addItemToLobbyList(StorableItem item) {
         this.itemsListLobby.add(item);
+    }
+    public void deletItemFromLobbyList(StorableItem item) {
+        this.itemsListLobby.remove(item);
     }
 }

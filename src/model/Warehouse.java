@@ -28,6 +28,10 @@ public class Warehouse {
         return Objects.hash(sectionList, id);
     }
 
+    public String getSectionListString() {
+        return sectionList.stream().map(Section::getSectionString).toString();
+    }
+
     public List<Section> getSectionList() {
         return sectionList;
     }
@@ -44,11 +48,11 @@ public class Warehouse {
         this.id = id;
     }
 
-    @Override
+    /*@Override
     public String toString() {
         return "Warehouse{" +
                 "sectionList=" + sectionList +
                 ", id=" + id +
                 '}';
-    }
+    }*/
 }

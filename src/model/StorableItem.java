@@ -8,21 +8,24 @@ public class StorableItem {
     private Long rackId;
     private String description;
     private int stock;
+    private String status;
 
-    public StorableItem(Long code, String name, Long rackId, String description, int stock) {
+    public StorableItem(Long code, String name, Long rackId, String description, int stock, String status) {
         this.code = code;
         this.name = name;
         this.rackId = rackId;
         this.description = description;
         this.stock = stock;
+        this.status = status;
     }
 
-    public StorableItem(Long code, String name, String description, int stock) {
+    public StorableItem(Long code, String name, String description, int stock, String status) {
         this.code = code;
         this.name = name;
         this.rackId = null;
         this.description = description;
         this.stock = stock;
+        this.status = status;
     }
 
     public StorableItem() {
@@ -81,9 +84,23 @@ public class StorableItem {
         this.description = description;
     }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
     // TODO agregar metodo para setear un campo reservado y la cantidad reservada no puede ser mayor al stock.
 
-
+    public String getStringItemD() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("-------------")
+                .append("\n")
+                .append("Item: ").append(this.name).append(" - Codigo: ").append(this.code)
+                .append("\n")
+                .append("Descripcion: ").append(description)
+                .append(" - Stock: ").append(stock)
+                .append(" - Ubicacion estanteria: ").append(rackId)
+                .append(" - Estado: ").append(status);
+        return sb.toString();
+    }
     @Override
     public String toString() {
         return "StorableItem{" +

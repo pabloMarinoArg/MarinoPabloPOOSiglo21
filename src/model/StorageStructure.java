@@ -60,10 +60,15 @@ public class StorageStructure {
 
     @Override
     public String toString() {
-        return "StorageStructure{" +
-                "id=" + id +
-                ", itemsList=" + itemsList +
-                ", description='" + description + '\'' +
-                '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("********************").append("\n")
+                .append("Estanteria: ").append(id).append("\n")
+                .append("********************").append("\n")
+                .append("Descripcion: ").append(description).append("\n")
+                .append("Items guardados:\n");
+
+        itemsList.forEach(storableItem -> sb.append(storableItem.getStringItemD()).append("\n"));
+
+        return sb.toString();
     }
 }
