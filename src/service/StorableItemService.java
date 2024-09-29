@@ -11,26 +11,25 @@ public class StorableItemService {
 
     public static final String EL_PRODUCTO_TIENE_DATOS_INCOMPLETOS = "El producto tiene datos incompletos: ";
     public static final String SE_CREO_EXITOSAMENTE_EL_PRODUCTO = "Se creo exitosamente el producto: ";
-    public static final String FAILED_ITEM_TO_LOBBY = "No se pudo agregar el producto";
+    public static final String FAILED_ITEM_TO_LOBBY = "No se pudo ingresar el producto al deposito";
 
     private GeneralRepository repository;
+    private LobbyService lobbyService;
 
-    public StorableItemService(GeneralRepository repository) {
-        this.repository = repository;
-    }
 
     public StorableItemService() {
         this.repository = GeneralRepository.getInstance();
+        this.lobbyService = new LobbyService();
     }
 
-    public void createItemAndSendItToLobby(Long code, int stock, String name, String description, StorableItemAction action) {
-           Optional<StorableItem> item = createItem(code, stock, name, description, action);
-           item.ifPresentOrElse(this::addItemsToLobby, ()-> System.out.println(FAILED_ITEM_TO_LOBBY));
+    public void createItemAndSendItToLobby(Long code, int stock, String name, String description) {
+           Optional<StorableItem> item = createItem(code, stock, name, description);
+           item.ifPresentOrElse(lobbyService::receiveItemToLobby, ()-> System.out.println(FAILED_ITEM_TO_LOBBY));
     }
 
-    public Optional<StorableItem> createItem(Long code, int stock, String name, String description, StorableItemAction action) {
+    public Optional<StorableItem> createItem(Long code, int stock, String name, String description) {
         try {
-            StorableItem item = createNewItem(code, stock, name, description, action);
+            StorableItem item = createNewItem(code, stock, name, description);
             Validator.validate(item);
             System.out.println(SE_CREO_EXITOSAMENTE_EL_PRODUCTO + item);
             return Optional.of(item);
@@ -40,8 +39,8 @@ public class StorableItemService {
         return Optional.empty();
     }
 
-    private static StorableItem createNewItem(Long code, int stock, String name, String description, StorableItemAction action) {
-        return new StorableItem(code, name, description, stock, action);
+    private static StorableItem createNewItem(Long code, int stock, String name, String description) {
+        return new StorableItem(code, name, description, stock);
     }
 
     public Optional<StorableItem> getItemByCode(int code) {

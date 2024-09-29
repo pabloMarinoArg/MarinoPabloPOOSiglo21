@@ -12,7 +12,7 @@ public class StorableItem {
     private int stock;
     private StorableItemAction action;
 
-    public StorableItem(Long code, String name, Long rackId, String description, int stock, String status) {
+    public StorableItem(Long code, String name, Long rackId, String description, int stock) {
         this.code = code;
         this.name = name;
         this.rackId = rackId;
@@ -29,13 +29,12 @@ public class StorableItem {
 
     }
 
-    public StorableItem(Long code, String name, String description, int stock, StorableItemAction action) {
+    public StorableItem(Long code, String name, String description, int stock) {
         this.code = code;
         this.name = name;
         this.rackId = null;
         this.description = description;
         this.stock = stock;
-        this.action = action;
     }
 
     public StorableItem() {

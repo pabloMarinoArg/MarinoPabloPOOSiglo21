@@ -2,7 +2,7 @@ package src.utils;
 
 public enum StorableItemAction {
     WITHDRAW,
-    STORAGE,
+    PENDING_STORAGE,
     STORED,
     DESTROY;
 }

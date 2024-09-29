@@ -14,7 +14,9 @@ import java.util.Optional;
 public class StorageStructureService {
 
     public static final String PRODUCTO_IDESTANTERIA_ESTANTERIA = "producto, id de estanteria o estanteria";
+
     private GeneralRepository repository;
+    private LobbyService lobbyService;
 
     public StorageStructureService() {
         GeneralRepository.getInstance();
@@ -62,6 +64,9 @@ public class StorageStructureService {
             }
 
             itemList.set(index.get(), itemFromList);
+
+            lobbyService.addItemFromRackToLobby(item);
+
             return rack;
         }
 

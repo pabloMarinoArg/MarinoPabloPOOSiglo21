@@ -136,7 +136,7 @@ public class MenuCreator {
         Long code = Long.valueOf(reader.readLine());
         System.out.println("Ingrese stock del producto");
         int stock = Integer.parseInt(reader.readLine());
-        itemService.createItemAndSendItToLobby(code, stock, name, description, StorableItemAction.STORAGE);
+        itemService.createItemAndSendItToLobby(code, stock, name, description);
         List<StorableItem> itemsListLobby = repository.getItemsListLobby();
         itemsListLobby.forEach(storableItem -> System.out.println(storableItem.getStringItemD()));
     }
