@@ -12,9 +12,6 @@ public class Section {
         this.id = id;
     }
 
-    public Section() {
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -43,17 +40,14 @@ public class Section {
     public void setId(Long id) {
         this.id = id;
     }
-    public StorageStructure getRackUnit(Long id) {
-        if (this.rackList.isEmpty()) {
-            return null;
-        }
 
-        for (StorageStructure rack : this.rackList) {
-            if (rack.getId() == id) {
-                return rack;
-            }
-        }
-        return null;
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Seccion id: ").append(this.id).append("\n")
+                .append("********************").append("\n");
+        rackList.forEach(rack -> sb.append(rack.toString()).append("\n"));
+        return sb.toString();
     }
 
     public String getSectionString() {
@@ -63,15 +57,4 @@ public class Section {
         rackList.forEach(rack -> sb.append(rack.toString()).append("\n"));
         return sb.toString();
     }
-
-   /* @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Section with id: ").append(this.id).append("\n")
-                .append("***********************************").append("\n");
-
-        rackList.forEach(rack -> sb.append(rack.toString()).append("\n"));
-
-        return sb.toString();
-    }*/
 }

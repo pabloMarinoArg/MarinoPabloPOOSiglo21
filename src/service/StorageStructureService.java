@@ -1,9 +1,11 @@
 package src.service;
 
+import src.errors.EmptyException;
 import src.model.Section;
 import src.model.StorableItem;
 import src.model.StorageStructure;
 import src.repository.GeneralRepository;
+import src.utils.StorableItemAction;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,67 +13,75 @@ import java.util.Optional;
 
 public class StorageStructureService {
 
+    public static final String PRODUCTO_IDESTANTERIA_ESTANTERIA = "producto, id de estanteria o estanteria";
     private GeneralRepository repository;
-
-    public StorageStructureService(GeneralRepository repository) {
-        this.repository = repository;
-    }
 
     public StorageStructureService() {
         GeneralRepository.getInstance();
     }
 
-    private void listAllRacks() {
-      List<Section> sections = this.repository.getWarehouse().getSectionList();
-      sections.forEach(section -> System.out.println(section.getSectionString()));
+    public void listAllRacks() {
+        List<Section> sections = this.repository.getWarehouse().getSectionList();
+        sections.forEach(System.out::println);
     }
 
-    public void getAll() {
-        listAllRacks();
+    public StorageStructure addStorableItemToRack(StorableItem item, Long rackId, StorageStructure rack) throws EmptyException {
+        if (notNull(item, rackId, rack)) {
+            var itemList = rack.getItemsList();
+            Optional<Integer> index = getItemIndexFromListByCode(item, itemList);
+
+            if (index.isEmpty()) {
+                item.setAction(StorableItemAction.STORED);
+                itemList.add(item);
+            } else {
+                var itemFromList = itemList.get(index.get());
+                itemFromList.agregarItemStock(item.getStock());
+                itemFromList.setAction(StorableItemAction.STORED);
+                itemList.set(index.get(), itemFromList);
+            }
+            return rack;
+        }
+
+        throw new EmptyException(PRODUCTO_IDESTANTERIA_ESTANTERIA);
     }
 
-    public boolean addStorableItemToRack(StorableItem item, Long rackId, List<StorageStructure> racks) {
-        if(item != null && !racks.isEmpty()) {
-            for (StorageStructure rack : racks) {
-                if(rackId != null && rackId == rack.getId()) {
-                    rack.setStorableItemIntoRack(item);
-                    System.out.println("Se ha agregado correctamente el producto");
-                    System.out.println(item.getName());
-                    System.out.println("al rack "+ rack.getId());
-                    item.setRackId(rackId);
-                    item.setStatus("Asignado");
-                    return true;
-                }
-                System.out.println("No existe el rack donde se quiere almacenar el producto o está vacío");
-                return false;
+    public StorageStructure withDrawItemFromRack(StorableItem item, Long rackId, StorageStructure rack, int amount) throws EmptyException {
+        if(notNull(item, rackId, rack)) {
+            var itemList = rack.getItemsList();
+            Optional<Integer> index = getItemIndexFromListByCode(item, itemList);
+
+            if(index.isEmpty()) {
+                throw new EmptyException("No existe en la estanteria: " + rackId + " el producto" + item.getName());
             }
 
-        }
-        return false;
-    }
+            var itemFromList = itemList.get(index.get());
+            itemFromList.quitarItemStock(amount);
 
-    public boolean deleteItemFromRack(Long itemId, Long rackId, List<StorageStructure> racks) {
-        if (isItemIdAndRacksNotNull(itemId, racks)) {
-            Optional<StorageStructure> structure = findStorageStructureById(rackId);
-            if (structure.isEmpty()){
-                System.out.println("No existe el rack o está vacío");
-                return false;
+            if(itemFromList.getStock() == 0) {
+              removeItemFromRack(index.get(), rack);
             }
+
+            itemList.set(index.get(), itemFromList);
+            return rack;
         }
-        System.out.println("Item , , "+ itemId +" borrado con éxito");
-        return true;
+
+        throw new EmptyException(PRODUCTO_IDESTANTERIA_ESTANTERIA);
     }
 
-
-    public Optional<StorageStructure> findStorageStructureById(Long id) {
-       return repository.getWarehouse().getSectionList().stream()
-                .flatMap(section -> section.getRackList().stream())
-                .filter(estanteria -> Objects.equals(estanteria.getId(), id))
-                .findFirst();
+    public void removeItemFromRack(int index, StorageStructure rack) {
+        List<StorableItem> itemList = rack.getItemsList();
+        itemList.remove(index);
     }
 
-    private static boolean isItemIdAndRacksNotNull(Long itemId, List<StorageStructure> racks) {
-        return itemId != null && !racks.isEmpty();
+    private static Optional<Integer> getItemIndexFromListByCode(StorableItem item, List<StorableItem> itemList) {
+        return itemList.stream()
+                .filter(i -> Objects.equals(i.getCode(), item.getCode()))
+                .findFirst()
+                .map(itemList::indexOf);
+    }
+
+    private static boolean notNull(StorableItem item, Long rackId, StorageStructure rack) {
+        return Objects.nonNull(item) && Objects.nonNull(rackId) && Objects.nonNull(rack);
     }
 
 }

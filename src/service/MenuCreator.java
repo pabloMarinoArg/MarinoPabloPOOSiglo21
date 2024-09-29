@@ -2,8 +2,8 @@ package src.service;
 
 import src.model.Section;
 import src.model.StorableItem;
-import src.model.StorageStructure;
 import src.repository.GeneralRepository;
+import src.utils.StorableItemAction;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,6 +19,7 @@ public class MenuCreator {
     private GeneralRepository repository;
     private StorableItemService itemService;
     private StorageStructureService storageStructureService;
+    private MenuCreatorService menuService;
 
     public void getMenu() throws IOException {
 
@@ -61,6 +62,8 @@ public class MenuCreator {
                     break;
                 case 3:
                     System.out.println("Eliminar/Modificar producto");
+                    menuService.drawSectionList();
+                    menuService.drawLobbyItemsAvailable();
                     break;
                 case 4:
                     System.out.println("Buscar producto");
@@ -133,7 +136,7 @@ public class MenuCreator {
         Long code = Long.valueOf(reader.readLine());
         System.out.println("Ingrese stock del producto");
         int stock = Integer.parseInt(reader.readLine());
-        itemService.createItem(code, stock, name, description, "Nuevo No Asignado");
+        itemService.createItemAndSendItToLobby(code, stock, name, description, StorableItemAction.STORAGE);
         List<StorableItem> itemsListLobby = repository.getItemsListLobby();
         itemsListLobby.forEach(storableItem -> System.out.println(storableItem.getStringItemD()));
     }
@@ -143,7 +146,8 @@ public class MenuCreator {
         this.opcion = 0;
         repository = GeneralRepository.getInstance();
         this.itemService = new StorableItemService(repository);
-        this.storageStructureService = new StorageStructureService(repository);
+        this.storageStructureService = new StorageStructureService();
+        this.menuService = new MenuCreatorService();
     }
 
     @Override
