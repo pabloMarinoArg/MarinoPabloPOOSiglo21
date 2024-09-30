@@ -1,7 +1,6 @@
 package src.service;
 
 import src.model.StorableItem;
-import src.model.StorageStructure;
 import src.repository.GeneralRepository;
 import src.utils.StorableItemAction;
 
@@ -25,7 +24,7 @@ public class LobbyService {
     }
 
     public void removeItemFromLobyToRack(StorableItem item) {
-       repository.getItemsListLobby().remove(item);
+        repository.getItemsListLobby().remove(item);
     }
 
 

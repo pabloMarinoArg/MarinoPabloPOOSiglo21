@@ -82,5 +82,7 @@ public class MenuCreatorService {
         return sectionService.getStorageStructureById(section, rackId);
     }
 
-
+    public void drawAudits() {
+        repository.getAuditEvents().forEach(System.out::println);
+    }
 }

@@ -20,6 +20,7 @@ public class StorageStructureService {
     public StorageStructureService() {
        this.repository = GeneralRepository.getInstance();
        this.lobbyService = new LobbyService();
+
     }
 
     public void listAllRacks() {
@@ -82,7 +83,7 @@ public class StorageStructureService {
         itemList.remove(index);
     }
 
-    private static Optional<Integer> getItemIndexFromListByCode(Long code, List<StorableItem> itemList) {
+    public Optional<Integer> getItemIndexFromListByCode(Long code, List<StorableItem> itemList) {
         return itemList.stream()
                 .filter(i -> Objects.equals(i.getCode(), code))
                 .findFirst()

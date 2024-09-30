@@ -4,5 +4,5 @@ public enum StorableItemAction {
     WITHDRAW,
     PENDING_STORAGE,
     STORED,
-    DESTROY;
+    MODIFY;
 }
