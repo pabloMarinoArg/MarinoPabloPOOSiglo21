@@ -1,25 +1,25 @@
 package src.service;
 
-import src.model.Section;
 import src.model.StorableItem;
+import src.model.StorageStructure;
 import src.repository.GeneralRepository;
-import src.utils.StorableItemAction;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class MenuCreator {
     private final BufferedReader reader;
     private String userName;
+    private String password;
     private int opcion;
-    private GeneralRepository repository;
-    private StorableItemService itemService;
-    private StorageStructureService storageStructureService;
-    private MenuCreatorService menuService;
+    private final GeneralRepository repository;
+    private final StorableItemService itemService;
+    private final StorageStructureService storageStructureService;
+    private final MenuCreatorService menuService;
 
     public void getMenu() throws IOException {
 
@@ -29,24 +29,20 @@ public class MenuCreator {
         System.out.println("**********V1**********");
         System.out.println("**********************");
 
-        System.out.println("Ingrese nombre de usuario: ");
+        userLogin();
 
-        try {
-            userName = reader.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         System.out.println("Ingrese una opción a ejecutar");
         do {
             System.out.println();
-            System.out.println("1- Ingresar producto");
-            System.out.println("2- Eliminar/Modificar producto");
-            System.out.println("3- Buscar producto");
-            System.out.println("4- Ingresar reserva cliente");
-            System.out.println("99- Salir");
+            System.out.println("1- Ingresar producto al deposito");
+            System.out.println("2- Ingresar producto en espera a estanterias");
+            System.out.println("3- Sacar producto de estanteria");
+            System.out.println("4- Modificar producto");
+            System.out.println("5 - Ver estanterias");
+            System.out.println("99 - Salir");
             System.out.println();
             try {
-                opcion = Integer.parseInt(reader.readLine());
+                opcion = Integer.parseInt(reader.readLine().trim());
             } catch (Exception e) {
                 System.out.println("Ingrese la opcion correcta");
                 opcion = 0;
@@ -55,13 +51,13 @@ public class MenuCreator {
 
             switch (opcion) {
                 case 1:
-                    addItemToLobbyProcess();
+                    addItemToLobby();
                     break;
                 case 2:
-                    addOrSubstractItem();
+                    takeItemToRacks();
                     break;
                 case 3:
-                    System.out.println("Eliminar/Modificar producto");
+                    withdrawItemFromRack();
                     menuService.drawSectionList();
                     menuService.drawLobbyItemsAvailable();
                     break;
@@ -69,7 +65,9 @@ public class MenuCreator {
                     System.out.println("Buscar producto");
                     break;
                 case 5:
-                    System.out.println("Ingresar reserva cliente");
+                    System.out.println("Ver estanterias");
+                    menuService.drawSectionList();
+                    menuService.drawLobbyItemsAvailable();
                     break;
                 default:
                     if (opcion != 99) {
@@ -85,67 +83,113 @@ public class MenuCreator {
         System.exit(0);
     }
 
-    private void addOrSubstractItem() throws IOException {
-        System.out.println("Asignar producto a estanteria");
-        storageStructureService.getAll();
-        repository.getItemsListLobby().forEach(storableItem -> {
-            System.out.println(storableItem.getStringItemD());
-        });
+    private void userLogin() throws IOException {
+        boolean flagNotPassed = true;
+        int counter = 3;
+        while (flagNotPassed) {
+            System.out.println("Ingrese nombre de usuario: ");
+            userName = reader.readLine().trim();
 
-        System.out.println("Ingrese el codigo del item a guardar: ");
-        var getCodeFromUser = Integer.parseInt(reader.readLine());
-        var item = itemService.getItemByCode(getCodeFromUser);
-        if (item.isEmpty()) {
-            System.out.printf("No existe el item con codigo: %d", getCodeFromUser);
-            return;
-        }
+            System.out.println("Ingrese la contrasena: ");
+            password = reader.readLine().trim();
 
-        System.out.println("Ingrese el id de la estanteria donde lo guardara: ");
-        var idRack = Long.parseLong(reader.readLine());
-        var rack = storageStructureService.findStorageStructureById(idRack);
-        if (rack.isEmpty()) {
-            System.out.printf("No existe la estanteria con id: %d", idRack);
-            return;
+            String passToCompare = repository.getUser().get(userName);
+
+            if (passToCompare != null && !passToCompare.isBlank() && !passToCompare.isEmpty() && passToCompare.equals(password)) {
+                flagNotPassed = false;
+            } else {
+                System.out.println("Usuario o contrasena incorrecta");
+                System.out.println("tiene intentos limitados, de superarlos se cerrara el programa");
+                counter--;
+                System.out.println("Intentos restantes: " + counter);
+                if (counter == 0) {
+                    System.out.println("Se desconecta del sistema...");
+                    System.exit(0);
+                }
+            }
+
         }
-        System.out.println("Que cantidad del stock disponible va guardar en la estanteria?");
-        var stockGuardado = Integer.parseInt(reader.readLine());
-        if (item.get().getStock() < stockGuardado) {
-            System.out.printf("Revisar la cantidad a guardar, es mayor a la disponible");
-            return;
-        }
-        if (!itemService.quitarStock(stockGuardado, getCodeFromUser)) {
-            System.out.println("No se pudo descontar el item - Error");
-            return;
-        }
-        var itemToStorageStructure = new StorableItem(item.get());
-        itemToStorageStructure.setStock(stockGuardado);
-        List<Section> sectionList = repository.getWarehouse().getSectionList();
-        storageStructureService.addStorableItemToRack(item.get(), idRack, sectionList.stream()
-                .flatMap(section -> section.getRackList().stream())
-                .collect(Collectors.toList()));
     }
 
-    private void addItemToLobbyProcess() throws IOException {
+    private void addItemToLobby() throws IOException {
         System.out.println("Ingresar lote de producto a lobby");
         System.out.println("Recepcion de productos nuevos a la espera de llevarlos a una estanteria");
         System.out.println("Ingrese nombre del producto");
-        String name = reader.readLine();
+        String name = reader.readLine().trim();
         System.out.println("Ingrese descripcion del producto");
-        String description = reader.readLine();
+        String description = reader.readLine().trim();
         System.out.println("Ingrese codigo de identificacion del producto");
         Long code = Long.valueOf(reader.readLine());
         System.out.println("Ingrese stock del producto");
-        int stock = Integer.parseInt(reader.readLine());
-        itemService.createItemAndSendItToLobby(code, stock, name, description);
-        List<StorableItem> itemsListLobby = repository.getItemsListLobby();
-        itemsListLobby.forEach(storableItem -> System.out.println(storableItem.getStringItemD()));
+        int stock = Integer.parseInt(reader.readLine().trim());
+        menuService.receiveProductIntoWarehouse(code, stock, name, description);
+        menuService.drawLobbyItemsAvailable();
+    }
+
+    private void takeItemToRacks() throws IOException {
+        System.out.println("Asignar producto a estanteria");
+
+        List<StorableItem> listItemsEnLobby = repository.getItemsListLobby();
+
+        if (listItemsEnLobby.isEmpty()) {
+            System.out.println("No hay productos en la recepcion");
+            return;
+        }
+
+        menuService.drawItemsLobbyList(listItemsEnLobby);
+
+        System.out.println("Ingrese el codigo del item a guardar: ");
+        var codeFromUser = Integer.parseInt(reader.readLine().trim());
+
+        Optional<StorableItem> item = itemService.getItemByCodeFromLobby(codeFromUser);
+        if (item.isEmpty()) {
+            System.out.println("El item no existe");
+            return;
+        }
+
+        menuService.drawSectionList();
+
+        System.out.println("Ingrese el id de la estanteria donde lo guardara: ");
+        var idRack = Long.parseLong(reader.readLine().trim());
+
+        Optional<StorageStructure> storageStructure = menuService.getStorageStructure(idRack);
+
+        if (storageStructure.isEmpty()) {
+            System.out.println("La estanteria no existe");
+            return;
+        }
+
+        storageStructureService.addStorableItemToRack(item.get(), idRack, storageStructure.get());
+    }
+
+    private void withdrawItemFromRack() throws IOException {
+        System.out.println("Sacar producto de estanteria");
+        storageStructureService.listAllRacks();
+
+        System.out.println("Ingrese el codigo del item a sacar: ");
+        var itemCode = Long.parseLong(reader.readLine().trim());
+
+        System.out.println("Ingrese la cantidad a sacar: ");
+        var amountToWithdraw = Integer.parseInt(reader.readLine().trim());
+
+        System.out.println("Ingrese el id de la estanteria que contiene al producto: ");
+        var rackId = Long.parseLong(reader.readLine().trim());
+
+        Optional<StorageStructure> storageStructure = menuService.getStorageStructure(rackId);
+
+        if (storageStructure.isEmpty()) {
+            System.out.println("La estanteria no existe");
+            return;
+        }
+
+        storageStructureService.withDrawItemFromRack(itemCode, storageStructure.get(), amountToWithdraw);
     }
 
     public MenuCreator() {
         this.reader = new BufferedReader(new InputStreamReader(System.in));
         this.opcion = 0;
         repository = GeneralRepository.getInstance();
-        this.itemService = new StorableItemService(repository);
+        this.itemService = new StorableItemService();
         this.storageStructureService = new StorageStructureService();
         this.menuService = new MenuCreatorService();
     }

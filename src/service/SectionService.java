@@ -1,6 +1,5 @@
 package src.service;
 
-import src.errors.EmptyException;
 import src.model.Section;
 import src.model.StorageStructure;
 import src.repository.GeneralRepository;
@@ -17,11 +16,11 @@ public class SectionService {
         this.repository = GeneralRepository.getInstance();
     }
 
-    public Optional<StorageStructure> getStorageStructureById(Section section, Long rackId) throws EmptyException {
+    public Optional<StorageStructure> getStorageStructureById(Section section, Long rackId) {
         List<StorageStructure> racksList = section.getRackList();
 
         if(racksList.isEmpty()) {
-            throw new EmptyException("La estanteria no existe, "+rackId);
+            return Optional.empty();
         }
 
         return racksList.stream()

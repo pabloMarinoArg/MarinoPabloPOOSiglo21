@@ -122,7 +122,8 @@ public class StorableItem {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("-------------")
+        sb.append("\n")
+                .append("-------------")
                 .append("\n")
                 .append("Item: ").append(this.name).append(" - Codigo: ").append(this.code)
                 .append("\n")

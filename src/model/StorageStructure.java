@@ -67,7 +67,7 @@ public class StorageStructure {
                 .append("Descripcion: ").append(description).append("\n")
                 .append("Items guardados:\n");
 
-        itemsList.forEach(storableItem -> sb.append(storableItem.getStringItemD()).append("\n"));
+        itemsList.forEach(storableItem -> sb.append(storableItem.toString()).append("\n"));
 
         return sb.toString();
     }

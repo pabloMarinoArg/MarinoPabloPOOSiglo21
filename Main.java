@@ -1,8 +1,6 @@
-import src.repository.GeneralRepository;
 import src.service.MenuCreator;
 
 import java.io.IOException;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {

@@ -2,7 +2,6 @@ package src.service;
 
 import src.model.StorableItem;
 import src.repository.GeneralRepository;
-import src.utils.StorableItemAction;
 import src.utils.Validator;
 
 import java.util.Optional;
@@ -43,7 +42,7 @@ public class StorableItemService {
         return new StorableItem(code, name, description, stock);
     }
 
-    public Optional<StorableItem> getItemByCode(int code) {
+    public Optional<StorableItem> getItemByCodeFromLobby(int code) {
         return repository.getItemsListLobby().stream()
                 .filter(storableItem -> storableItem.getCode() == code)
                 .findFirst();
@@ -56,7 +55,7 @@ public class StorableItemService {
     }
 
     public boolean quitarStock(int stockAQuitar, int code) {
-        Optional<StorableItem> item = getItemByCode(code);
+        Optional<StorableItem> item = getItemByCodeFromLobby(code);
         if (item.isEmpty()) {
             return false;
         }

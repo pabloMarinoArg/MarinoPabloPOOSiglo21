@@ -1,21 +1,20 @@
 package src.repository;
 
-import src.model.Section;
-import src.model.StorableItem;
-import src.model.StorageStructure;
-import src.model.Warehouse;
+import src.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GeneralRepository {
     private static GeneralRepository instance;
     private Warehouse warehouse;
     private List<StorableItem> itemsListLobby;
+    private final ConcurrentHashMap<String, String> user;
 
     public GeneralRepository() {
-
+        User admin = new User("admin", "123456");
         StorageStructure rack1 = new StorageStructure(1L, new ArrayList<>(), "Cables");
         StorageStructure rack2 = new StorageStructure(2L, new ArrayList<>(), "Electronico");
         StorageStructure rack3 = new StorageStructure(3L, new ArrayList<>(), "Plasticos");
@@ -28,8 +27,11 @@ public class GeneralRepository {
         sectionList.add(section2);
         sectionList.add(section3);
         List<StorableItem> listStorableItem = new ArrayList<>();
+        ConcurrentHashMap<String, String> credentials = new ConcurrentHashMap<>();
+        credentials.put(admin.getUserName(), admin.getPassword());
         this.itemsListLobby = listStorableItem;
         this.warehouse = new Warehouse(sectionList, 123L);
+        this.user = credentials;
     }
 
     public static GeneralRepository getInstance() {
@@ -52,5 +54,9 @@ public class GeneralRepository {
     }
     public void deletItemFromLobbyList(StorableItem item) {
         this.itemsListLobby.remove(item);
+    }
+
+    public ConcurrentHashMap<String, String> getUser() {
+        return user;
     }
 }
