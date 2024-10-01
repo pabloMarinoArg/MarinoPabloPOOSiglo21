@@ -105,7 +105,7 @@ public class StorableItem {
         if (cantidad > 0 && this.stock >= cantidad) {
             stock -= cantidad;
         } else {
-            throw new IllegalArgumentException("Cantidad invalida o stock insuficiente");
+            System.out.println("Cantidad invalida o stock insuficiente");
         }
     }
 

@@ -64,6 +64,10 @@ public class StorageStructureService {
             }
 
             StorableItem itemFromList = itemList.get(index.get());
+            if (itemFromList.getStock() < amount || amount == 0) {
+                System.out.println("No hay stock suficiente");
+                return;
+            }
             itemFromList.quitarItemStock(amount);
 
             if(itemFromList.getStock() == 0) {

@@ -33,6 +33,8 @@ public class MenuCreator {
         System.out.println("**********V1**********");
         System.out.println("**********************");
 
+        // Esta harcodeado en GeneralRepository
+        // por el momento es -> user: admin pass: 123456
         userLogin();
 
         System.out.println("Ingrese una opción a ejecutar");
@@ -74,7 +76,6 @@ public class MenuCreator {
                 case 5:
                     System.out.println("Ver estanterias");
                     menuService.drawSectionList();
-                    menuService.drawLobbyItemsAvailable();
                     break;
                 case 6:
                     drawAudits();
