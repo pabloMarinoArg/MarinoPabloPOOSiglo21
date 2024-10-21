@@ -16,7 +16,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class MenuCreator {
-    // Se crean las variables de los servicios a utilizar y los "placeholders" para input del usuario.
+    // Se crean las variables de los servicios a utilizar
+    // y los "placeholders" para input del usuario.
     private final BufferedReader reader;
     private String userName;
     private String password;
@@ -56,6 +57,10 @@ public class MenuCreator {
             System.out.println("99 - Salir");
             System.out.println();
 
+            // Acá uso try catch para poder setear a CERO la variable opcion
+            // Y no me rompa el programa, para que permita al usuario
+            // ingresar correctamente el valor pedido en un nuevo intento.
+
             try {
                 opcion = Integer.parseInt(reader.readLine().trim());
             } catch (Exception e) {
@@ -66,31 +71,43 @@ public class MenuCreator {
 
             switch (opcion) {
                 case 1:
+                    // Agrego item al lobby, seria como ingresar un producto al deposito
+                    // cuando viene de afuera.
                     addItemToLobby();
                     break;
                 case 2:
+                    // Se ingresa algun producto del "lobby" a la estanteria que indiquemos
                     takeItemToRacks();
                     break;
                 case 3:
+                    // Se saca algun producto de una estantería que le indiquemos
+                    // debemos especificar id de estanteria, de producto y la cantidad a retirar
                     withdrawItemFromRack(Optional.empty());
                     break;
                 case 4:
+                    // Podemos editar algunos parametros de los productos ya ingresados.
                     editItem();
                     break;
                 case 5:
+                    // Muestra todas las estanterias con su informacion y sus
+                    // productos almacenados, si tuviera.
                     System.out.println("Ver estanterias");
                     menuService.drawSectionList();
                     break;
                 case 6:
+                    // Nos muestra los registros de auditoria generados en la mayoria de las transacciones
                     drawAudits();
                     break;
                 case 7:
+                    // Nos muestra que productos tenemos en el lobby
                     menuService.drawLobbyItemsAvailable();
                     break;
                 case 8:
+                    // Nos permite crear una orden de retiro para un cliente
                     createInvoiceOrder();
                     break;
                 case 9:
+                    // Nos muestra todas las ordenes de retiro creadas
                     menuService.drawAllInvoices();
                     break;
                 default:
@@ -107,7 +124,11 @@ public class MenuCreator {
         System.exit(0);
     }
 
+
     private void userLogin() throws IOException {
+        // Se usa un while y un contador decremental
+        // para poder controlar la cantidad de reintentos de login
+        // Pasados los 3 reintentos apaga el sistema.
         boolean flagNotPassed = true;
         int counter = 3;
         while (flagNotPassed) {
@@ -136,18 +157,30 @@ public class MenuCreator {
     }
 
     private void addItemToLobby() throws IOException {
+        // Se pide el nombre del producto
         System.out.println("Ingresar lote de producto a lobby");
         System.out.println("Recepcion de productos nuevos a la espera de llevarlos a una estanteria");
         System.out.println("Ingrese nombre del producto");
         String name = reader.readLine().trim();
+
+        // Se pide la descripcion del producto
         System.out.println("Ingrese descripcion del producto");
         String description = reader.readLine().trim();
+
+        // Se pide el codigo del producto
         System.out.println("Ingrese codigo de identificacion del producto");
         Long code = Long.valueOf(reader.readLine());
+
+        // Se pide el stock del producto
         System.out.println("Ingrese stock del producto");
         int stock = Integer.parseInt(reader.readLine().trim());
+
+        // Se ingresa el producto recien creado al deposito y lo envia a una lista que representa
+        // al lobby. Luego nos muestra el producto recien ingresado.
         menuService.receiveProductIntoWarehouse(code, stock, name, description);
         menuService.drawLobbyItemsAvailable();
+
+        // Se genera su correspondiente Audit.
         Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.PENDING_STORAGE, code, "");
         auditService.addAuditToList(audit);
         System.out.printf("Item %s ingresado al deposito correctamente%n", name);
@@ -156,6 +189,8 @@ public class MenuCreator {
     private void takeItemToRacks() throws IOException {
         System.out.println("Asignar producto a estanteria");
 
+        //Se traen los productos del lobby y se fija si hay items o no
+        // si hay los muestra, sino te devuelve al menu.
         List<StorableItem> listItemsEnLobby = repository.getItemsListLobby();
 
         if (listItemsEnLobby.isEmpty()) {
@@ -165,20 +200,27 @@ public class MenuCreator {
 
         menuService.drawItemsLobbyList(listItemsEnLobby);
 
+        // Se pide el id del item a guardar
         System.out.println("Ingrese el codigo del item a guardar: ");
         var codeFromUser = Integer.parseInt(reader.readLine().trim());
 
+        // Se chequea que el id del item ingresado corresponda a un item en el lobby
         Optional<StorableItem> item = itemService.getItemByCodeFromLobby(codeFromUser);
         if (item.isEmpty()) {
             System.out.println("El item no existe");
             return;
         }
 
+        // Nos muestra las secciones donde podemos guardarlo
+        // Estas secciones nos muestran informacion de sus estanterias disponibles
+        // y los datos necesarios para continuar el flujo
         menuService.drawSectionList();
 
+        // Se pide el id de la estanteria donde se guardara
         System.out.println("Ingrese el id de la estanteria donde lo guardara: ");
         var idRack = Long.parseLong(reader.readLine().trim());
 
+        // Se busca la estanteria y se chequea si existe o no.
         Optional<StorageStructure> storageStructure = menuService.getStorageStructure(idRack);
 
         if (storageStructure.isEmpty()) {
@@ -186,27 +228,36 @@ public class MenuCreator {
             return;
         }
 
+        // Se guarda el item del lobby en la estanteria elegida
         storageStructureService.addStorableItemToRack(item.get(), idRack, storageStructure.get());
+
+        // Se genera el audit correspondiente
         Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.STORED, item.get().getCode(), "");
         auditService.addAuditToList(audit);
     }
 
     private void withdrawItemFromRack(Optional<Invoice> invoice) throws IOException {
         System.out.println("Sacar producto de estanteria");
+        // Se muestran todas las estanterias
         storageStructureService.listAllRacks();
 
+        // Se muestran las secciones y los items del lobby
         menuService.drawSectionList();
         menuService.drawLobbyItemsAvailable();
 
+        // Se pide al usuario el codigo del item que se quiere retirar
         System.out.println("Ingrese el codigo del item a sacar: ");
         var itemCode = Long.parseLong(reader.readLine().trim());
 
+        // Se pide la cantidad a sacar
         System.out.println("Ingrese la cantidad a sacar: ");
         var amountToWithdraw = Integer.parseInt(reader.readLine().trim());
 
+        // Se pide que ingrese el id de la estanteria donde se ubica el producto
         System.out.println("Ingrese el id de la estanteria que contiene al producto: ");
         var rackId = Long.parseLong(reader.readLine().trim());
 
+        // Se obtiene y se chequea si existe la estanteria
         Optional<StorageStructure> storageStructure = menuService.getStorageStructure(rackId);
 
         if (storageStructure.isEmpty()) {
@@ -214,14 +265,19 @@ public class MenuCreator {
             return;
         }
 
+        // Se procede a retirar el producto y restar el stock de la estanteria
+        // EL producto retirado se va al lobby
         storageStructureService.withDrawItemFromRack(itemCode, storageStructure.get(), amountToWithdraw);
 
+        // Si al metodo se le pasó una invoice entonces busca el ultimo registro de Withdraw realizado en la linea
+        // con código anterior y lo suma al detalle de la invoice
         if(invoice.isPresent()) {
             var listWithdraw = menuService.lobbyItemsAvailableByItemAction(StorableItemAction.WITHDRAW);
             var product = listWithdraw.get(listWithdraw.size()-1);
             invoice.get().getDetail().add(product.toString() + "\n");
         }
 
+        // Se genera el audit correspondiente
         Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.WITHDRAW, itemCode, "");
         auditService.addAuditToList(audit);
 
@@ -235,21 +291,27 @@ public class MenuCreator {
 
     private void editItem() throws IOException {
         System.out.println("Editar producto de estanteria");
+
+        // Se muestran todas las estanterias
         storageStructureService.listAllRacks();
 
+        // Se pide el id del producto a editar
         System.out.println("Ingrese el codigo del item a sacar: ");
         var ic = Long.parseLong(reader.readLine().trim());
 
+        // Se pide el id de la estanteria donde se ubica el producto a editar
         System.out.println("Ingrese el id de la estanteria que contiene al producto: ");
         var ri = Long.parseLong(reader.readLine().trim());
 
+        // Se obtiene el item, y se verifica que exista
         Optional<StorableItem> itemEditable = getItem(ri, ic);
-
         if(itemEditable.isEmpty()) {
             System.out.println("No existe el item");
             return;
         }
 
+        // Se genera un sub-menu para editar
+        // Solo se permite editar nombre, descripcion y stock
         System.out.println("Que quiere editar?");
         System.out.println("1 - Nombre");
         System.out.println("2 - Descripcion");
@@ -273,22 +335,30 @@ public class MenuCreator {
                 itemEditable.get().setName(stockEdited);
                 break;
         }
+
+        // Se genera el audit correspondiente
         Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.MODIFY, itemEditable.get().getCode(), "");
         auditService.addAuditToList(audit);
     }
 
     private void createInvoiceOrder() throws IOException {
         System.out.println("Crear orden de envio/retiro");
+
+        // Se chequea que existan productos en el deposito, si no se corta el proceso y se devuelve al menu ppal
         if (!menuService.isStorableItemExists()) {
             System.out.println("No hay ningun item ingresado al deposito que pueda ser retirado");
             return;
         }
+
+        // Se muestran todos los clientes cargados
         System.out.println("Clientes");
         menuService.drawClientsList();
 
+        // Se pide el dni del cliente al cual le vamos hacer la orden
         System.out.println("Ingrese el DNI del cliente para abrir orden");
         var dni = Long.parseLong(reader.readLine().trim());
 
+        // Se obtiene al cliente y se verifica si existe con ese dni ingresado
         var client = menuService.getAllClients().stream()
                 .filter(clientUser -> clientUser.getIdNumber()==dni)
                 .findFirst();
@@ -297,13 +367,17 @@ public class MenuCreator {
             return;
         }
 
+        // Se genera una INVOICE y se inicializa con algunos parametros
         var fullName = client.get().getFirstName() +" " + client.get().getLastName();
         var sendAddress = client.get().getDeliveryAddress();
         Invoice inv = new Invoice();
         inv.setClientFullName(fullName);
         inv.setSendAddress(sendAddress);
+
+        // Se llama al metodo que saca productos de las estanterias con la invoice recien creada
         withdrawItemFromRack(Optional.of(inv));
 
+        // Se hace loop para permitir cargar cuantos productos sean necesarios.
         do {
             System.out.println("Agregar otro producto a retirar por cliente?");
             System.out.println("1 - Si");
@@ -328,6 +402,7 @@ public class MenuCreator {
 
         System.out.println(inv);
 
+        // Se generan audits correspondientes
         Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.INVOICE, 0L, "inv id: "+inv.getId());
         auditService.addAuditToList(audit);
 
@@ -349,6 +424,7 @@ public class MenuCreator {
     }
 
     public MenuCreator() {
+        // Se instancian las variables del MenuCreator
         this.reader = new BufferedReader(new InputStreamReader(System.in));
         this.opcion = 0;
         repository = GeneralRepository.getInstance();
