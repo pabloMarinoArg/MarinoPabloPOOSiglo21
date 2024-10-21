@@ -236,7 +236,7 @@ public class MenuCreator {
         auditService.addAuditToList(audit);
     }
 
-    private void withdrawItemFromRack(Optional<Invoice> invoice) throws IOException {
+    private Optional<StorableItem> withdrawItemFromRack(Optional<Invoice> invoice) throws IOException {
         System.out.println("Sacar producto de estanteria");
         // Se muestran todas las estanterias
         storageStructureService.listAllRacks();
@@ -262,12 +262,15 @@ public class MenuCreator {
 
         if (storageStructure.isEmpty()) {
             System.out.println("La estanteria no existe");
-            return;
+            return Optional.empty();
         }
 
         // Se procede a retirar el producto y restar el stock de la estanteria
         // EL producto retirado se va al lobby
-        storageStructureService.withDrawItemFromRack(itemCode, storageStructure.get(), amountToWithdraw);
+        Optional<StorableItem> item = storageStructureService.withDrawItemFromRack(itemCode, storageStructure.get(), amountToWithdraw);
+        if (item.isEmpty()) {
+            return Optional.empty();
+        }
 
         // Si al metodo se le pasó una invoice entonces busca el ultimo registro de Withdraw realizado en la linea
         // con código anterior y lo suma al detalle de la invoice
@@ -282,6 +285,7 @@ public class MenuCreator {
         auditService.addAuditToList(audit);
 
         System.out.println("Producto correctamente sacado de la estanteria");
+        return item;
     }
 
     private void drawAudits() {
@@ -375,8 +379,10 @@ public class MenuCreator {
         inv.setSendAddress(sendAddress);
 
         // Se llama al metodo que saca productos de las estanterias con la invoice recien creada
-        withdrawItemFromRack(Optional.of(inv));
-
+        Optional<StorableItem> item = withdrawItemFromRack(Optional.of(inv));
+        if(item.isEmpty()) {
+            return;
+        }
         // Se hace loop para permitir cargar cuantos productos sean necesarios.
         do {
             System.out.println("Agregar otro producto a retirar por cliente?");

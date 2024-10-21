@@ -53,20 +53,20 @@ public class StorageStructureService {
         return;
     }
 
-    public void withDrawItemFromRack(Long code, StorageStructure rack, int amount) {
+    public Optional<StorableItem> withDrawItemFromRack(Long code, StorageStructure rack, int amount) {
         if(notNull(code, rack)) {
             var itemList = rack.getItemsList();
             Optional<Integer> index = getItemIndexFromListByCode(code, itemList);
 
             if(index.isEmpty()) {
                 System.out.println("El producto a retirar, no existe");
-                return;
+                return Optional.empty();
             }
 
             StorableItem itemFromList = itemList.get(index.get());
             if (itemFromList.getStock() < amount || amount == 0) {
                 System.out.println("No hay stock suficiente");
-                return;
+                return Optional.empty();
             }
             itemFromList.quitarItemStock(amount);
 
@@ -79,7 +79,9 @@ public class StorageStructureService {
             StorableItem itemToLoby = new StorableItem(itemFromList);
             itemToLoby.setStock(amount);
             lobbyService.addItemFromRackToLobby(itemToLoby);
+            return Optional.of(itemToLoby);
         }
+        return Optional.empty();
     }
 
     public void removeItemFromRack(int index, StorageStructure rack) {
