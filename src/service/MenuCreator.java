@@ -1,6 +1,7 @@
 package src.service;
 
 import src.model.Audits;
+import src.model.Invoice;
 import src.model.StorableItem;
 import src.model.StorageStructure;
 import src.repository.GeneralRepository;
@@ -15,10 +16,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class MenuCreator {
+    // Se crean las variables de los servicios a utilizar y los "placeholders" para input del usuario.
     private final BufferedReader reader;
     private String userName;
     private String password;
     private int opcion;
+    private int repeatWithdraw;
     private final GeneralRepository repository;
     private final StorableItemService itemService;
     private final StorageStructureService storageStructureService;
@@ -32,12 +35,13 @@ public class MenuCreator {
         System.out.println("****Inventory Sys*****");
         System.out.println("**********V1**********");
         System.out.println("**********************");
-
+        System.out.println();
+        System.out.println("PARA PROFESORES: USUARIO: admin PASS: 123456");
         // Esta harcodeado en GeneralRepository
         // por el momento es -> user: admin pass: 123456
         userLogin();
 
-        System.out.println("Ingrese una opción a ejecutar");
+        System.out.println("Ingrese una opcion a ejecutar");
         do {
             System.out.println();
             System.out.println("1  - Ingresar producto al deposito");
@@ -47,6 +51,8 @@ public class MenuCreator {
             System.out.println("5  - Ver estanterias");
             System.out.println("6  - Ver registros de auditoria");
             System.out.println("7  - Ver lobby recepcion");
+            System.out.println("8  - Crear orden de retiro");
+            System.out.println("9  - Ver ordenes de retiro creadas");
             System.out.println("99 - Salir");
             System.out.println();
 
@@ -66,9 +72,7 @@ public class MenuCreator {
                     takeItemToRacks();
                     break;
                 case 3:
-                    withdrawItemFromRack();
-                    menuService.drawSectionList();
-                    menuService.drawLobbyItemsAvailable();
+                    withdrawItemFromRack(Optional.empty());
                     break;
                 case 4:
                     editItem();
@@ -82,6 +86,12 @@ public class MenuCreator {
                     break;
                 case 7:
                     menuService.drawLobbyItemsAvailable();
+                    break;
+                case 8:
+                    createInvoiceOrder();
+                    break;
+                case 9:
+                    menuService.drawAllInvoices();
                     break;
                 default:
                     if (opcion != 99) {
@@ -138,8 +148,9 @@ public class MenuCreator {
         int stock = Integer.parseInt(reader.readLine().trim());
         menuService.receiveProductIntoWarehouse(code, stock, name, description);
         menuService.drawLobbyItemsAvailable();
-        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.PENDING_STORAGE, code);
+        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.PENDING_STORAGE, code, "");
         auditService.addAuditToList(audit);
+        System.out.printf("Item %s ingresado al deposito correctamente%n", name);
     }
 
     private void takeItemToRacks() throws IOException {
@@ -176,13 +187,16 @@ public class MenuCreator {
         }
 
         storageStructureService.addStorableItemToRack(item.get(), idRack, storageStructure.get());
-        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.STORED, item.get().getCode());
+        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.STORED, item.get().getCode(), "");
         auditService.addAuditToList(audit);
     }
 
-    private void withdrawItemFromRack() throws IOException {
+    private void withdrawItemFromRack(Optional<Invoice> invoice) throws IOException {
         System.out.println("Sacar producto de estanteria");
         storageStructureService.listAllRacks();
+
+        menuService.drawSectionList();
+        menuService.drawLobbyItemsAvailable();
 
         System.out.println("Ingrese el codigo del item a sacar: ");
         var itemCode = Long.parseLong(reader.readLine().trim());
@@ -202,8 +216,16 @@ public class MenuCreator {
 
         storageStructureService.withDrawItemFromRack(itemCode, storageStructure.get(), amountToWithdraw);
 
-        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.WITHDRAW, itemCode);
+        if(invoice.isPresent()) {
+            var listWithdraw = menuService.lobbyItemsAvailableByItemAction(StorableItemAction.WITHDRAW);
+            var product = listWithdraw.get(listWithdraw.size()-1);
+            invoice.get().getDetail().add(product.toString() + "\n");
+        }
+
+        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.WITHDRAW, itemCode, "");
         auditService.addAuditToList(audit);
+
+        System.out.println("Producto correctamente sacado de la estanteria");
     }
 
     private void drawAudits() {
@@ -251,8 +273,64 @@ public class MenuCreator {
                 itemEditable.get().setName(stockEdited);
                 break;
         }
-        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.MODIFY, itemEditable.get().getCode());
+        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.MODIFY, itemEditable.get().getCode(), "");
         auditService.addAuditToList(audit);
+    }
+
+    private void createInvoiceOrder() throws IOException {
+        System.out.println("Crear orden de envio/retiro");
+        if (!menuService.isStorableItemExists()) {
+            System.out.println("No hay ningun item ingresado al deposito que pueda ser retirado");
+            return;
+        }
+        System.out.println("Clientes");
+        menuService.drawClientsList();
+
+        System.out.println("Ingrese el DNI del cliente para abrir orden");
+        var dni = Long.parseLong(reader.readLine().trim());
+
+        var client = menuService.getAllClients().stream()
+                .filter(clientUser -> clientUser.getIdNumber()==dni)
+                .findFirst();
+        if (client.isEmpty()) {
+            System.out.println("Revise el dni ingresado. No corresponde a un cliente registrado.");
+            return;
+        }
+
+        var fullName = client.get().getFirstName() +" " + client.get().getLastName();
+        var sendAddress = client.get().getDeliveryAddress();
+        Invoice inv = new Invoice();
+        inv.setClientFullName(fullName);
+        inv.setSendAddress(sendAddress);
+        withdrawItemFromRack(Optional.of(inv));
+
+        do {
+            System.out.println("Agregar otro producto a retirar por cliente?");
+            System.out.println("1 - Si");
+            System.out.println("2 - No");
+
+            repeatWithdraw = Integer.parseInt(reader.readLine().trim());
+
+            switch (repeatWithdraw) {
+                case 1:
+                    withdrawItemFromRack(Optional.of(inv));
+                    break;
+                case 2:
+                    break;
+                default:
+                    System.out.println("No existe esa opcion");
+                    break;
+            }
+        } while (repeatWithdraw != 2);
+
+        menuService.addInvoiceToInvoiceList(inv);
+        System.out.printf("Se completo con exito la creacion de la orden %s%n", inv.getId());
+
+        System.out.println(inv);
+
+        Audits audit = new Audits(userName, LocalDateTime.now(), StorableItemAction.INVOICE, 0L, "inv id: "+inv.getId());
+        auditService.addAuditToList(audit);
+
     }
 
     private Optional<StorableItem> getItem(long ri, long ic) {

@@ -4,7 +4,7 @@ import src.utils.StorableItemAction;
 
 import java.time.LocalDateTime;
 
-public record Audits (String user, LocalDateTime createdDate, StorableItemAction action, Long itemCode) {
+public record Audits (String user, LocalDateTime createdDate, StorableItemAction action, Long itemCode, String obs) {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -16,6 +16,9 @@ public record Audits (String user, LocalDateTime createdDate, StorableItemAction
                 .append("Audit: ").append(this.user).append(" - Item Codigo: ").append(this.itemCode)
                 .append("\n")
                 .append("Accion: ").append(this.action);
+        if(!this.obs.isEmpty()) {
+            sb.append("\n").append("Observacion: ").append(this.obs);
+        }
         return sb.toString();
     }
 }

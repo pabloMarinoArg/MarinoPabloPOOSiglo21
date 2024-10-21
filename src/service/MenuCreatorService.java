@@ -1,8 +1,6 @@
 package src.service;
 
-import src.model.Section;
-import src.model.StorableItem;
-import src.model.StorageStructure;
+import src.model.*;
 import src.repository.GeneralRepository;
 import src.utils.StorableItemAction;
 
@@ -84,5 +82,33 @@ public class MenuCreatorService {
 
     public void drawAudits() {
         repository.getAuditEvents().forEach(System.out::println);
+    }
+
+    public void drawClientsList() {
+       var clients = getAllClients();
+       clients.forEach(System.out::println);
+    }
+
+    public List<ClientUser> getAllClients() {return repository.getClientsList();}
+
+    public void addInvoiceToInvoiceList(Invoice invoice) {
+        repository.getInvoiceList().add(invoice);
+    }
+
+    public void drawAllInvoices() {
+        List<Invoice> invoiceList = repository.getInvoiceList();
+        if(invoiceList.isEmpty()) {
+            System.out.println("No hay ordenes de retiro creadas");
+            return;
+        }
+        repository.getInvoiceList().forEach(System.out::println);
+    }
+
+    public boolean isStorableItemExists() {
+        return !repository.getItemsListLobby().isEmpty()
+                && repository.getWarehouse().getSectionList().stream()
+                .flatMap(section -> section.getRackList().stream())
+                .flatMap(racks -> racks.getItemsList().stream())
+                .anyMatch(item -> true);
     }
 }

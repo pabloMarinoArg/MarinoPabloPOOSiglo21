@@ -12,13 +12,13 @@ public class StorableItem {
     private int stock;
     private StorableItemAction action;
 
-    public StorableItem(Long code, String name, Long rackId, String description, int stock) {
+    public StorableItem(Long code, String name, Long rackId, String description, int stock, StorableItemAction action) {
         this.code = code;
         this.name = name;
         this.rackId = rackId;
         this.description = description;
         this.stock = stock;
-
+        this.action = action;
     }
 
     public StorableItem (StorableItem itemClone) {

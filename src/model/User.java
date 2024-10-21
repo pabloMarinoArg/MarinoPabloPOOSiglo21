@@ -2,11 +2,12 @@ package src.model;
 
 import java.util.Objects;
 
-public class User {
+public class User extends Person{
     private String userName;
     private String password;
 
-    public User(String userName, String password) {
+    public User(String firstName, String lastName, String email, String userName, String password) {
+        super(firstName, lastName, email);
         this.userName = userName;
         this.password = password;
     }
