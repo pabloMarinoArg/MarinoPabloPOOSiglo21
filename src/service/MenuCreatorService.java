@@ -105,10 +105,11 @@ public class MenuCreatorService {
     }
 
     public boolean isStorableItemExists() {
-        return !repository.getItemsListLobby().isEmpty()
-                && repository.getWarehouse().getSectionList().stream()
+        boolean itemsStoredAvailable = repository.getWarehouse().getSectionList().stream()
                 .flatMap(section -> section.getRackList().stream())
                 .flatMap(racks -> racks.getItemsList().stream())
                 .anyMatch(item -> true);
+        return !repository.getItemsListLobby().isEmpty()
+                || itemsStoredAvailable;
     }
 }
