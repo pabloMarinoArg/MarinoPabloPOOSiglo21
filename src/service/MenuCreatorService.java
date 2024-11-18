@@ -84,6 +84,10 @@ public class MenuCreatorService {
         repository.getAuditEvents().forEach(System.out::println);
     }
 
+    public String getAudits() {
+       return repository.getAuditEvents().toString();
+    }
+
     public void drawClientsList() {
        var clients = getAllClients();
        clients.forEach(System.out::println);

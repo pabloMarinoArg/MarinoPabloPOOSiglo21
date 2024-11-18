@@ -1,21 +1,19 @@
 package src.service;
 
-import src.model.Audits;
-import src.model.Invoice;
-import src.model.StorableItem;
-import src.model.StorageStructure;
+import src.exceptions.ClientIdNotFoundError;
+import src.exceptions.ItemNotFoundError;
+import src.exceptions.StorageStructureNotFoundError;
+import src.model.*;
 import src.repository.GeneralRepository;
 import src.utils.StorableItemAction;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class MenuCreator {
+public class MenuCreator implements Menu {
     // Se crean las variables de los servicios a utilizar
     // y los "placeholders" para input del usuario.
     private final BufferedReader reader;
@@ -29,6 +27,11 @@ public class MenuCreator {
     private final MenuCreatorService menuService;
     private AuditService auditService;
 
+    private static final String STORAGE_STRUCTURE_NOT_FOUND = "La estanteria no existe";
+    private static final String ITEM_NOT_FOUND_ERROR = "El item ingresado no existe";
+    private static final String CLIENT_ID_NOT_FOUND_ERROR = "Revise el dni ingresado. No corresponde a un cliente registrado.";
+
+    @Override
     public void getMenu() throws IOException {
 
         System.out.println("**********************");
@@ -37,7 +40,7 @@ public class MenuCreator {
         System.out.println("**********V1**********");
         System.out.println("**********************");
         System.out.println();
-        System.out.println("PARA PROFESORES: USUARIO: admin PASS: 123456");
+        System.out.println("PARA PROFESORES, USUARIO: admin PASS: 123456");
         // Esta harcodeado en GeneralRepository
         // por el momento es -> user: admin pass: 123456
         userLogin();
@@ -54,6 +57,7 @@ public class MenuCreator {
             System.out.println("7  - Ver lobby recepcion");
             System.out.println("8  - Crear orden de retiro");
             System.out.println("9  - Ver ordenes de retiro creadas");
+            System.out.println("10  - Exportar audits a un archivo de texto");
             System.out.println("99 - Salir");
             System.out.println();
 
@@ -68,56 +72,63 @@ public class MenuCreator {
                 opcion = 0;
             }
 
-
-            switch (opcion) {
-                case 1:
-                    // Agrego item al lobby, seria como ingresar un producto al deposito
-                    // cuando viene de afuera.
-                    addItemToLobby();
-                    break;
-                case 2:
-                    // Se ingresa algun producto del "lobby" a la estanteria que indiquemos
-                    takeItemToRacks();
-                    break;
-                case 3:
-                    // Se saca algun producto de una estantería que le indiquemos
-                    // debemos especificar id de estanteria, de producto y la cantidad a retirar
-                    withdrawItemFromRack(Optional.empty());
-                    break;
-                case 4:
-                    // Podemos editar algunos parametros de los productos ya ingresados.
-                    editItem();
-                    break;
-                case 5:
-                    // Muestra todas las estanterias con su informacion y sus
-                    // productos almacenados, si tuviera.
-                    System.out.println("Ver estanterias");
-                    menuService.drawSectionList();
-                    break;
-                case 6:
-                    // Nos muestra los registros de auditoria generados en la mayoria de las transacciones
-                    drawAudits();
-                    break;
-                case 7:
-                    // Nos muestra que productos tenemos en el lobby
-                    menuService.drawLobbyItemsAvailable();
-                    break;
-                case 8:
-                    // Nos permite crear una orden de retiro para un cliente
-                    createInvoiceOrder();
-                    break;
-                case 9:
-                    // Nos muestra todas las ordenes de retiro creadas
-                    menuService.drawAllInvoices();
-                    break;
-                default:
-                    if (opcion != 99) {
-                        System.out.println("No hay opción para eso");
+            try {
+                switch (opcion) {
+                    case 1:
+                        // Agrego item al lobby, seria como ingresar un producto al deposito
+                        // cuando viene de afuera.
+                        addItemToLobby();
                         break;
-                    }
-                    System.out.println("Saliendo del sistema...");
-                    break;
+                    case 2:
+                        // Se ingresa algun producto del "lobby" a la estanteria que indiquemos
+                        takeItemToRacks();
+                        break;
+                    case 3:
+                        // Se saca algun producto de una estantería que le indiquemos
+                        // debemos especificar id de estanteria, de producto y la cantidad a retirar
+                        withdrawItemFromRack(Optional.empty());
+                        break;
+                    case 4:
+                        // Podemos editar algunos parametros de los productos ya ingresados.
+                        editItem();
+                        break;
+                    case 5:
+                        // Muestra todas las estanterias con su informacion y sus
+                        // productos almacenados, si tuviera.
+                        System.out.println("Ver estanterias");
+                        menuService.drawSectionList();
+                        break;
+                    case 6:
+                        // Nos muestra los registros de auditoria generados en la mayoria de las transacciones
+                        drawAudits();
+                        break;
+                    case 7:
+                        // Nos muestra que productos tenemos en el lobby
+                        menuService.drawLobbyItemsAvailable();
+                        break;
+                    case 8:
+                        // Nos permite crear una orden de retiro para un cliente
+                        createInvoiceOrder();
+                        break;
+                    case 9:
+                        // Nos muestra todas las ordenes de retiro creadas
+                        menuService.drawAllInvoices();
+                        break;
+                    case 10:
+                        exportAudits();
+                        break;
+                    default:
+                        if (opcion != 99) {
+                            System.out.println("No hay opción para eso");
+                            break;
+                        }
+                        System.out.println("Saliendo del sistema...");
+                        break;
 
+                }
+
+            } catch (StorageStructureNotFoundError | ClientIdNotFoundError | ItemNotFoundError e) {
+                System.out.println(e.getMessage());
             }
 
         } while (opcion != 99);
@@ -186,7 +197,7 @@ public class MenuCreator {
         System.out.printf("Item %s ingresado al deposito correctamente%n", name);
     }
 
-    private void takeItemToRacks() throws IOException {
+    private void takeItemToRacks() throws IOException, StorageStructureNotFoundError {
         System.out.println("Asignar producto a estanteria");
 
         //Se traen los productos del lobby y se fija si hay items o no
@@ -224,8 +235,7 @@ public class MenuCreator {
         Optional<StorageStructure> storageStructure = menuService.getStorageStructure(idRack);
 
         if (storageStructure.isEmpty()) {
-            System.out.println("La estanteria no existe");
-            return;
+            throw new StorageStructureNotFoundError(STORAGE_STRUCTURE_NOT_FOUND);
         }
 
         // Se guarda el item del lobby en la estanteria elegida
@@ -293,7 +303,7 @@ public class MenuCreator {
         menuService.drawAudits();
     }
 
-    private void editItem() throws IOException {
+    private void editItem() throws IOException, ItemNotFoundError {
         System.out.println("Editar producto de estanteria");
 
         // Se muestran todas las estanterias
@@ -310,8 +320,7 @@ public class MenuCreator {
         // Se obtiene el item, y se verifica que exista
         Optional<StorableItem> itemEditable = getItem(ri, ic);
         if(itemEditable.isEmpty()) {
-            System.out.println("No existe el item");
-            return;
+            throw new ItemNotFoundError(ITEM_NOT_FOUND_ERROR);
         }
 
         // Se genera un sub-menu para editar
@@ -345,7 +354,7 @@ public class MenuCreator {
         auditService.addAuditToList(audit);
     }
 
-    private void createInvoiceOrder() throws IOException {
+    private void createInvoiceOrder() throws IOException, ClientIdNotFoundError {
         System.out.println("Crear orden de envio/retiro");
 
         // Se chequea que existan productos en el deposito, si no se corta el proceso y se devuelve al menu ppal
@@ -367,8 +376,7 @@ public class MenuCreator {
                 .filter(clientUser -> clientUser.getIdNumber()==dni)
                 .findFirst();
         if (client.isEmpty()) {
-            System.out.println("Revise el dni ingresado. No corresponde a un cliente registrado.");
-            return;
+            throw new ClientIdNotFoundError(CLIENT_ID_NOT_FOUND_ERROR);
         }
 
         // Se genera una INVOICE y se inicializa con algunos parametros
@@ -428,6 +436,29 @@ public class MenuCreator {
 
         return Optional.of(storageStructure.get().getItemsList().get(itemToEdit.get()));
     }
+
+    private void exportAudits() {
+        BufferedWriter writer = null;
+
+        try {
+            writer = new BufferedWriter(new FileWriter("audits.txt"));
+
+                writer.write(menuService.getAudits());
+                writer.newLine(); // Agrega una nueva línea
+            } catch (IOException e) {
+            System.err.println("Error escribiendo el archivo: " + e.getMessage());
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    System.err.println("Error cerrando el BufferedWriter: " + e.getMessage());
+                }
+            }
+        }
+        System.out.println("Archivo escrito exitosamente revisar el directorio raiz para visualizarlo.");
+        }
+
 
     public MenuCreator() {
         // Se instancian las variables del MenuCreator
